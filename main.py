@@ -44,6 +44,13 @@ class Video(Resource):
         video = VideoModel.query.filter_by(id=video_id).first_or_404('id wasn\'t found')
         return video
 
+
+    @marshal_with(resource_fields)
+    def view(self):
+        videos = VideoModel.query.all()
+        return videos
+
+
     @marshal_with(resource_fields)
     def put(self, video_id):
         args = video_put_args.parse_args()
