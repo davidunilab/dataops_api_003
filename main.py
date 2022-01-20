@@ -31,18 +31,6 @@ video_put_args.add_argument("views", type=int, help="Type should be int")
 video_put_args.add_argument("likes", type=int, help="Type should be int")
 
 
-videos = {
-
-}
-
-# def abort404(video_id):
-#     if video_id not in videos:
-#         abort(404, message=f"video id '{video_id}' not exists")
-#
-# def abort_if_video_exist(video_id):
-#     if video_id not in videos:
-#         abort(409, message=f"video id '{video_id}' already in records")
-
 resource_fields = {
     "id": fields.Integer,
     "name": fields.String,
@@ -53,24 +41,30 @@ resource_fields = {
 class Video(Resource):
     @marshal_with(resource_fields)
     def get(self, video_id):
-        # abort404(video_id)
-        return videos.get(video_id)
+        video = VideoModel.query.filter_by(id=video_id).first_or_404('id wasn\'t found')
+        return video
 
     @marshal_with(resource_fields)
     def put(self, video_id):
         args = video_put_args.parse_args()
-        # abort_if_video_exist(video_id)
-        video = VideoModel(id=args['id'], name=args['name'], views=args['views'], likes=args['likes'])
-        db.session.add(video)
-        db.session.commit()
-
-        videos[video_id] = args
-        return {video_id: args}
+        video = VideoModel.query.filter_by(id=video_id).first()
+        if video:
+            video.name = args.get('name')
+            video.likes = args.get('likes')
+            video.views = args.get('views')
+            db.session.add(video)
+            db.session.commit()
+        else:
+            video = VideoModel(id=video_id, name=args['name'], views=args['views'], likes=args['likes'])
+            db.session.add(video)
+            db.session.commit()
+        return video
 
     def delete(self, video_id):
         args = video_put_args.parse_args()
-        # abort404(video_id)
-        del videos[video_id]
+        video = VideoModel.query.filter_by(id=video_id).first_or_404('id wasn\'t found')
+        db.session.delete(video)
+        db.session.commit()
         return ' ', 204
 
 api.add_resource(Video, '/video/<int:video_id>')
